@@ -1,0 +1,85 @@
+package com.example.capstone.service
+
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Bundle
+import android.provider.ContactsContract
+import android.widget.Button
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import com.example.capstone.R
+
+@Suppress("UNREACHABLE_CODE")
+class CallPhone : AppCompatActivity() {
+
+    private lateinit var emergencyCallButton: Button
+    private lateinit var emergencyContactNumber: String
+
+    private val requestPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+            if (isGranted) {
+                makeEmergencyCall(emergencyContactNumber)
+            } else {
+                // 권한이 거부되었을 때의 처리
+            }
+        }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_call_phone)
+
+        emergencyCallButton = findViewById(R.id.emergencyCallButton)
+
+        // 버튼 클릭 시 긴급 전화 걸기
+        emergencyCallButton.setOnClickListener {
+            if (checkCallPermission()) {
+                makeEmergencyCall(emergencyContactNumber)
+            } else {
+                requestPermissionLauncher.launch(android.Manifest.permission.CALL_PHONE)
+            }
+        }
+
+        // 연락처 선택 버튼 클릭 시 연락처 선택 액티비티 열기
+        val pickContactButton: Button = findViewById(R.id.pickContactButton)
+        pickContactButton.setOnClickListener {
+            pickEmergencyContact()
+        }
+    }
+
+    // 연락처 선택
+    private fun pickEmergencyContact() {
+        val contactPickerIntent = Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI)
+        resultLauncher.launch(contactPickerIntent)
+    }
+
+    private val resultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == RESULT_OK) {
+            result.data?.data
+            // TODO: 연락처에서 필요한 정보를 추출하고 저장
+            // 예제에서는 전화번호만 사용하도록 간단하게 처리
+            emergencyContactNumber = getPhoneNumberFromContactUri()
+        }
+    }
+
+    private fun getPhoneNumberFromContactUri(): String {
+        // TODO: 연락처에서 전화번호를 가져오는 코드 작성
+        return ""
+    }
+
+    // 긴급 전화 걸기
+    private fun makeEmergencyCall(phoneNumber: String) {
+        val callIntent = Intent(Intent.ACTION_CALL)
+        callIntent.data = Uri.parse("tel:$phoneNumber")
+        startActivity(callIntent)
+    }
+
+    private fun checkCallPermission(): Boolean {
+        return return ContextCompat.checkSelfPermission(
+            this,
+            android.Manifest.permission.CALL_PHONE
+        ) == PackageManager.PERMISSION_GRANTED
+
+    }
+}
